@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<title>Simple Gantt</title>
@@ -8,14 +9,17 @@
 			font-family: sans-serif;
 			background: #ccc;
 		}
+
 		.container {
 			width: 80%;
 			margin: 0 auto;
 		}
+
 		/* custom class */
 		.gantt .bar-milestone .bar {
 			fill: tomato;
 		}
+
 		.heading {
 			text-align: center;
 		}
@@ -23,6 +27,7 @@
 	<link rel="stylesheet" href="dist/frappe-gantt.css" />
 	<script src="dist/frappe-gantt.js"></script>
 </head>
+
 <body>
 	<div class="container">
 		<h2 class="heading">Interactive Gantt Chart entirely made in SVG!</h2>
@@ -100,9 +105,11 @@
 				console.log(mode);
 			},
 			view_mode: 'Month',
-			language: 'en'
+			language: 'en',
+			index_keys: ['id', 'name']
 		});
 		console.log(gantt_chart);
 	</script>
 </body>
+
 </html>

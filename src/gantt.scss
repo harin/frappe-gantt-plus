@@ -14,27 +14,38 @@ $handle-color: #ddd !default;
 	.grid-background {
 		fill: none;
 	}
+
 	.grid-header {
 		fill: #ffffff;
 		stroke: $border-color;
 		stroke-width: 1.4;
 	}
+
 	.grid-row {
 		fill: #ffffff;
 	}
+
+	.row-index {
+		fill: #ffffff;
+	}
+
 	.grid-row:nth-child(even) {
 		fill: $light-bg;
 	}
+
 	.row-line {
 		stroke: $light-border-color;
 	}
+
 	.tick {
 		stroke: $border-color;
 		stroke-width: 0.2;
+
 		&.thick {
 			stroke-width: 0.4;
 		}
 	}
+
 	.today-highlight {
 		fill: $light-yellow;
 		opacity: 0.5;
@@ -53,9 +64,11 @@ $handle-color: #ddd !default;
 		transition: stroke-width .3s ease;
 		user-select: none;
 	}
+
 	.bar-progress {
 		fill: $blue;
 	}
+
 	.bar-invalid {
 		fill: transparent;
 		stroke: $bar-stroke;
@@ -66,6 +79,7 @@ $handle-color: #ddd !default;
 			fill: $text-light;
 		}
 	}
+
 	.bar-label {
 		fill: #fff;
 		dominant-baseline: central;
@@ -117,13 +131,16 @@ $handle-color: #ddd !default;
 		}
 	}
 
-	.lower-text, .upper-text {
+	.lower-text,
+	.upper-text {
 		font-size: 12px;
 		text-anchor: middle;
 	}
+
 	.upper-text {
 		fill: $text-light;
 	}
+
 	.lower-text {
 		fill: $text-color;
 	}

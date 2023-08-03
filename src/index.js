@@ -42,7 +42,7 @@ export default class Gantt {
         } else {
             throw new TypeError(
                 'Frappé Gantt only supports usage of a string CSS selector,' +
-                    " HTML DOM element or SVG DOM element for the 'element' parameter"
+                " HTML DOM element or SVG DOM element for the 'element' parameter"
             );
         }
 
@@ -87,6 +87,7 @@ export default class Gantt {
             popup_trigger: 'click',
             custom_popup_html: null,
             language: 'en',
+            index_keys: []
         };
         this.options = Object.assign({}, default_options, options);
     }
@@ -307,7 +308,7 @@ export default class Gantt {
             this.options.header_height +
             this.options.padding +
             (this.options.bar_height + this.options.padding) *
-                this.tasks.length;
+            this.tasks.length;
 
         createSVG('rect', {
             x: 0,
@@ -328,14 +329,34 @@ export default class Gantt {
         const rows_layer = createSVG('g', { append_to: this.layers.grid });
         const lines_layer = createSVG('g', { append_to: this.layers.grid });
 
-        const row_width = this.dates.length * this.options.column_width;
+        const row_width = (this.dates.length + 1) * this.options.column_width;
         const row_height = this.options.bar_height + this.options.padding;
 
         let row_y = this.options.header_height + this.options.padding / 2;
 
+
         for (let task of this.tasks) {
+            for (let [i, key] of this.options.index_keys.entries()) {
+                const x = i * this.options.column_width
+                createSVG('rect', {
+                    x,
+                    y: row_y,
+                    width: this.options.column_width,
+                    height: row_height,
+                    class: 'row-index',
+                    append_to: rows_layer,
+                })
+                createSVG('text', {
+                    x: x + this.options.column_width / 2,
+                    y: row_y + row_height / 2,
+                    innerHTML: task[key],
+                    class: 'row-index lower-text',
+                    append_to: rows_layer,
+                });
+            }
+
             createSVG('rect', {
-                x: 0,
+                x: this.options.column_width * this.options.index_keys.length,
                 y: row_y,
                 width: row_width,
                 height: row_height,
@@ -359,8 +380,27 @@ export default class Gantt {
     make_grid_header() {
         const header_width = this.dates.length * this.options.column_width;
         const header_height = this.options.header_height + 10;
+        for (const [i, key] of this.options.index_keys.entries()) {
+            createSVG('rect', {
+                x: i * this.options.column_width,
+                y: 0,
+                width: header_width,
+                height: header_height,
+                class: 'grid-header',
+                append_to: this.layers.grid,
+            });
+            createSVG('text', {
+                x: i * this.options.column_width + this.options.column_width / 2,
+                y: this.options.header_height,
+                width: header_width,
+                height: header_height,
+                innerHTML: key,
+                class: 'lower-text',
+                append_to: this.layers.date,
+            });
+        }
         createSVG('rect', {
-            x: 0,
+            x: this.options.column_width * this.options.index_keys.length,
             y: 0,
             width: header_width,
             height: header_height,
@@ -424,7 +464,7 @@ export default class Gantt {
             const width = this.options.column_width;
             const height =
                 (this.options.bar_height + this.options.padding) *
-                    this.tasks.length +
+                this.tasks.length +
                 this.options.header_height +
                 this.options.padding / 2;
 
@@ -511,10 +551,10 @@ export default class Gantt {
                 date.getDate() !== last_date.getDate()
                     ? date.getMonth() !== last_date.getMonth()
                         ? date_utils.format(
-                              date,
-                              'D MMM',
-                              this.options.language
-                          )
+                            date,
+                            'D MMM',
+                            this.options.language
+                        )
                         : date_utils.format(date, 'D', this.options.language)
                     : '',
             Day_upper:
@@ -536,7 +576,7 @@ export default class Gantt {
         };
 
         const base_pos = {
-            x: i * this.options.column_width,
+            x: (i + this.options.index_keys.length) * this.options.column_width,
             lower_y: this.options.header_height,
             upper_y: this.options.header_height - 25,
         };
@@ -628,7 +668,7 @@ export default class Gantt {
 
         const scroll_pos =
             (hours_before_first_task / this.options.step) *
-                this.options.column_width -
+            this.options.column_width -
             this.options.column_width;
 
         parent_element.scrollLeft = scroll_pos;
