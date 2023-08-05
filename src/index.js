@@ -87,7 +87,8 @@ export default class Gantt {
             popup_trigger: 'click',
             custom_popup_html: null,
             language: 'en',
-            index_keys: []
+            info_column_keys: [],
+            index_padding: 10
         };
         this.options = Object.assign({}, default_options, options);
     }
@@ -295,8 +296,9 @@ export default class Gantt {
     }
 
     make_grid() {
+        let rows_layer = this.make_info_columns();
         this.make_grid_background();
-        this.make_grid_rows();
+        this.make_grid_rows(rows_layer);
         this.make_grid_header();
         this.make_grid_ticks();
         this.make_grid_highlights();
@@ -311,7 +313,7 @@ export default class Gantt {
             this.tasks.length;
 
         createSVG('rect', {
-            x: 0,
+            x: this.options.index_offset,
             y: 0,
             width: grid_width,
             height: grid_height,
@@ -325,8 +327,78 @@ export default class Gantt {
         });
     }
 
-    make_grid_rows() {
+    make_info_columns() {
         const rows_layer = createSVG('g', { append_to: this.layers.grid });
+        const row_height = this.options.bar_height + this.options.padding;
+        let row_y = this.options.header_height + this.options.padding / 2;
+
+        const indexes = this.options.info_column_keys.map((_) => [])
+        const max_index_width = this.options.info_column_keys.map((key) => {
+            const elem = createSVG('text', {
+                x: 0,
+                y: this.options.header_height,
+                innerHTML: key,
+                class: 'lower-text',
+                append_to: this.layers.date,
+            });
+            const width = elem.getComputedTextLength()
+            this.layers.date.removeChild(elem)
+            return width
+        })
+
+        for (let task of this.tasks) {
+            for (let [i, key] of this.options.info_column_keys.entries()) {
+                const rect = createSVG('rect', {
+                    x: 0,
+                    y: row_y,
+                    width: this.options.column_width,
+                    height: row_height,
+                    class: 'row-index',
+                    append_to: rows_layer,
+                })
+                const text = createSVG('text', {
+                    x: 0,
+                    y: row_y + row_height / 2,
+                    innerHTML: task[key],
+                    class: 'row-index lower-text',
+                    append_to: rows_layer,
+                });
+
+                indexes[i].push({ rect, text })
+                const text_length = text.getComputedTextLength()
+                max_index_width[i] = max_index_width[i] > text_length ? max_index_width[i] : text_length;
+            }
+            row_y += this.options.bar_height + this.options.padding;
+        }
+
+        // make sure it's not too skinny
+        max_index_width.forEach((width, i) => {
+            max_index_width[i] = Math.max(width, this.options.column_width) + this.options.index_padding
+        })
+
+        this.options.index_widths = max_index_width
+
+        const index_xs = max_index_width
+            .reduce((pre, cur, idx, arr) => {
+                pre.push(cur + pre[pre.length - 1])
+                return pre
+            }, [0])
+
+        for (let [i, index] of indexes.entries()) {
+            for (let { rect, text } of indexes[i]) {
+                rect.setAttribute('width', max_index_width[i])
+                rect.setAttribute('x', index_xs[i])
+                text.setAttribute('width', max_index_width[i])
+                text.setAttribute('x', index_xs[i] + max_index_width[i] / 2)
+            }
+        }
+
+        this.options.index_offset = index_xs[index_xs.length - 1]
+        this.options.index_xs = index_xs
+        return rows_layer
+    }
+
+    make_grid_rows(rows_layer) {
         const lines_layer = createSVG('g', { append_to: this.layers.grid });
 
         const row_width = (this.dates.length + 1) * this.options.column_width;
@@ -334,29 +406,9 @@ export default class Gantt {
 
         let row_y = this.options.header_height + this.options.padding / 2;
 
-
         for (let task of this.tasks) {
-            for (let [i, key] of this.options.index_keys.entries()) {
-                const x = i * this.options.column_width
-                createSVG('rect', {
-                    x,
-                    y: row_y,
-                    width: this.options.column_width,
-                    height: row_height,
-                    class: 'row-index',
-                    append_to: rows_layer,
-                })
-                createSVG('text', {
-                    x: x + this.options.column_width / 2,
-                    y: row_y + row_height / 2,
-                    innerHTML: task[key],
-                    class: 'row-index lower-text',
-                    append_to: rows_layer,
-                });
-            }
-
             createSVG('rect', {
-                x: this.options.column_width * this.options.index_keys.length,
+                x: this.options.index_offset,
                 y: row_y,
                 width: row_width,
                 height: row_height,
@@ -364,14 +416,14 @@ export default class Gantt {
                 append_to: rows_layer,
             });
 
-            createSVG('line', {
-                x1: 0,
-                y1: row_y + row_height,
-                x2: row_width,
-                y2: row_y + row_height,
-                class: 'row-line',
-                append_to: lines_layer,
-            });
+            // createSVG('line', {
+            //     x1: 0,
+            //     y1: row_y + row_height,
+            //     x2: row_width,
+            //     y2: row_y + row_height,
+            //     class: 'row-line',
+            //     append_to: lines_layer,
+            // });
 
             row_y += this.options.bar_height + this.options.padding;
         }
@@ -380,9 +432,9 @@ export default class Gantt {
     make_grid_header() {
         const header_width = this.dates.length * this.options.column_width;
         const header_height = this.options.header_height + 10;
-        for (const [i, key] of this.options.index_keys.entries()) {
+        for (const [i, key] of this.options.info_column_keys.entries()) {
             createSVG('rect', {
-                x: i * this.options.column_width,
+                x: this.options.index_xs[i],
                 y: 0,
                 width: header_width,
                 height: header_height,
@@ -390,9 +442,9 @@ export default class Gantt {
                 append_to: this.layers.grid,
             });
             createSVG('text', {
-                x: i * this.options.column_width + this.options.column_width / 2,
+                x: this.options.index_xs[i] + this.options.index_widths[i] / 2,
                 y: this.options.header_height,
-                width: header_width,
+                width: this.options.index_widths[i],
                 height: header_height,
                 innerHTML: key,
                 class: 'lower-text',
@@ -400,7 +452,7 @@ export default class Gantt {
             });
         }
         createSVG('rect', {
-            x: this.options.column_width * this.options.index_keys.length,
+            x: this.options.index_offset,
             y: 0,
             width: header_width,
             height: header_height,
@@ -410,7 +462,7 @@ export default class Gantt {
     }
 
     make_grid_ticks() {
-        let tick_x = 0;
+        let tick_x = this.options.index_offset;
         let tick_y = this.options.header_height + this.options.padding / 2;
         let tick_height =
             (this.options.bar_height + this.options.padding) *
@@ -576,7 +628,7 @@ export default class Gantt {
         };
 
         const base_pos = {
-            x: (i + this.options.index_keys.length) * this.options.column_width,
+            x: this.options.index_offset + i * this.options.column_width,
             lower_y: this.options.header_height,
             upper_y: this.options.header_height - 25,
         };

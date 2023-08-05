@@ -75,7 +75,7 @@ export default class Bar {
 
     draw_bar() {
         this.$bar = createSVG('rect', {
-            x: this.x,
+            x: this.gantt.options.index_offset + this.x,
             y: this.y,
             width: this.width,
             height: this.height,
@@ -95,7 +95,7 @@ export default class Bar {
     draw_progress_bar() {
         if (this.invalid) return;
         this.$bar_progress = createSVG('rect', {
-            x: this.x,
+            x: this.gantt.options.index_offset + this.x,
             y: this.y,
             width: this.progress_width,
             height: this.height,
