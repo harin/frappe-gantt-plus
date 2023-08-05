@@ -29,9 +29,13 @@ $handle-color: #ddd !default;
 		fill: #ffffff;
 	}
 
-	.grid-row:nth-child(even) {
-		fill: $light-bg;
+	.alt {
+		fill: $light-bg !important;
 	}
+
+	// .grid-row:nth-child(even) {
+	// 	fill: $light-bg;
+	// }
 
 	.row-line {
 		stroke: $light-border-color;
