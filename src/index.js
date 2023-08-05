@@ -89,7 +89,9 @@ export default class Gantt {
             language: 'en',
             info_column_keys: [],
             index_padding: 10,
-            group_by: '_index'
+            group_by: '_index',
+            start_date: undefined,
+            end_date: undefined
         };
         this.options = Object.assign({}, default_options, options);
     }
@@ -212,6 +214,12 @@ export default class Gantt {
     }
 
     setup_gantt_dates() {
+        if (this.options.start_date !== undefined && this.options.end_date !== undefined) {
+            this.gantt_start = date_utils.parse(this.options.start_date)
+            this.gantt_end = date_utils.parse(this.options.end_date)
+            return
+        }
+
         this.gantt_start = this.gantt_end = null;
 
         for (let task of this.tasks) {
