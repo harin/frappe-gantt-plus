@@ -91,7 +91,8 @@ export default class Gantt {
             index_padding: 10,
             group_by: '_index',
             start_date: undefined,
-            end_date: undefined
+            end_date: undefined,
+            highlight_dates: []
         };
         this.options = Object.assign({}, default_options, options);
     }
@@ -543,30 +544,40 @@ export default class Gantt {
         }
     }
 
+
+    make_highlight(date, width = this.options.column_width, class_name = 'highlight') {
+        const x = this.options.index_offset +
+            (date_utils.diff(date, this.gantt_start, 'hour') /
+                this.options.step) *
+            this.options.column_width;
+        const y = 0;
+
+        const height =
+            (this.options.bar_height + this.options.padding) *
+            this.tasks.length +
+            this.options.header_height +
+            this.options.padding / 2;
+
+        createSVG('rect', {
+            x,
+            y,
+            width,
+            height,
+            class: class_name,
+            append_to: this.layers.grid,
+        });
+    }
+
     make_grid_highlights() {
-        // highlight today's date
+
+
         if (this.view_is(VIEW_MODE.DAY)) {
-            const x =
-                (date_utils.diff(date_utils.today(), this.gantt_start, 'hour') /
-                    this.options.step) *
-                this.options.column_width;
-            const y = 0;
+            if (this.options.highlight_dates !== undefined) {
+                this.options.highlight_dates.forEach((d) => this.make_highlight(d))
+            }
 
-            const width = this.options.column_width;
-            const height =
-                (this.options.bar_height + this.options.padding) *
-                this.tasks.length +
-                this.options.header_height +
-                this.options.padding / 2;
-
-            createSVG('rect', {
-                x,
-                y,
-                width,
-                height,
-                class: 'today-highlight',
-                append_to: this.layers.grid,
-            });
+            // highlight today's date
+            this.make_highlight(date_utils.today(), 1, 'today-highlight')
         }
     }
 

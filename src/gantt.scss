@@ -46,13 +46,17 @@ $handle-color: #ddd !default;
 		stroke-width: 0.2;
 
 		&.thick {
-			stroke-width: 0.4;
+			stroke-width: 1.4;
 		}
 	}
 
-	.today-highlight {
+	.highlight {
 		fill: $light-yellow;
 		opacity: 0.5;
+	}
+
+	.today-highlight {
+		fill: red;
 	}
 
 	.arrow {
