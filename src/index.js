@@ -15,6 +15,19 @@ const VIEW_MODE = {
     YEAR: 'Year',
 };
 
+var stringToColour = function (str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    var colour = '#';
+    for (var i = 0; i < 3; i++) {
+        var value = (hash >> (i * 8)) & 0xFF;
+        colour += ('00' + value.toString(16)).substr(-2);
+    }
+    return colour;
+}
+
 export default class Gantt {
     constructor(wrapper, tasks, options) {
         this.setup_wrapper(wrapper);
@@ -51,11 +64,11 @@ export default class Gantt {
             // create it
             this.$svg = createSVG('svg', {
                 append_to: wrapper_element,
-                class: 'gantt',
+                class: 'wrapper',
             });
         } else {
             this.$svg = svg_element;
-            this.$svg.classList.add('gantt');
+            this.$svg.classList.add('wrapper');
         }
 
         // wrapper element
@@ -92,7 +105,8 @@ export default class Gantt {
             group_by: '_index',
             start_date: undefined,
             end_date: undefined,
-            highlight_dates: []
+            highlight_dates: [],
+            bar_color_fn: (task) => stringToColour(task.name)
         };
         this.options = Object.assign({}, default_options, options);
     }
@@ -155,6 +169,8 @@ export default class Gantt {
             if (!task.id) {
                 task.id = generate_id(task);
             }
+
+            task._color = this.options.bar_color_fn(task)
 
             return task;
         });
@@ -279,6 +295,13 @@ export default class Gantt {
     bind_events() {
         this.bind_grid_click();
         this.bind_bar_events();
+        $('.gantt-container').addEventListener('scroll', (e) => {
+            document.querySelectorAll('.index').forEach((el) => {
+                el.setAttribute('x', Number(el.getAttribute('data-offset-x')) + e.target.scrollLeft)
+            })
+            // bring to front
+            this.layers.index.parentElement.appendChild(this.layers.index)
+        })
     }
 
     render() {
@@ -297,10 +320,21 @@ export default class Gantt {
         this.layers = {};
         const layers = ['grid', 'date', 'arrow', 'progress', 'bar', 'details'];
         // make group layers
+
+        this.layers['index'] = createSVG('g', {
+            class: 'index',
+            append_to: this.$svg
+        })
+
+        this.layers['gantt'] = createSVG('g', {
+            class: 'gantt',
+            append_to: this.$svg
+        })
+
         for (let layer of layers) {
             this.layers[layer] = createSVG('g', {
                 class: layer,
-                append_to: this.$svg,
+                append_to: this.layers['gantt'],
             });
         }
     }
@@ -388,20 +422,24 @@ export default class Gantt {
 
         for (let task of this.tasks) {
             for (let [i, key] of info_cols.entries()) {
+
+                const classes = []
+                if (i == 0) classes.push('index')
+
                 const rect = createSVG('rect', {
                     x: 0,
                     y: row_y,
                     width: this.options.column_width,
                     height: row_height,
-                    class: 'row-index ' + task._row_class,
-                    append_to: rows_layer,
+                    class: ['info-col', task._row_class, ...classes].join(' '),
+                    append_to: this.layers['index'],
                 })
                 const text = createSVG('text', {
                     x: 0,
                     y: row_y + row_height / 2,
                     innerHTML: task[key],
-                    class: 'row-index lower-text',
-                    append_to: rows_layer,
+                    class: ['info-col', 'lower-text', ...classes].join(' '),
+                    append_to: this.layers['index'],
                 });
 
                 indexes[i].push({ rect, text })
@@ -428,8 +466,11 @@ export default class Gantt {
             for (let { rect, text } of indexes[i]) {
                 rect.setAttribute('width', max_index_width[i])
                 rect.setAttribute('x', index_xs[i])
+
+                const text_x = index_xs[i] + max_index_width[i] / 2
                 text.setAttribute('width', max_index_width[i])
-                text.setAttribute('x', index_xs[i] + max_index_width[i] / 2)
+                text.setAttribute('x', text_x)
+                text.setAttribute('data-offset-x', text_x)
             }
         }
 
@@ -472,25 +513,7 @@ export default class Gantt {
     make_grid_header() {
         const header_width = this.dates.length * this.options.column_width;
         const header_height = this.options.header_height + 10;
-        for (const [i, key] of this.get_info_cols().entries()) {
-            createSVG('rect', {
-                x: this.options.index_xs[i],
-                y: 0,
-                width: header_width,
-                height: header_height,
-                class: 'grid-header',
-                append_to: this.layers.grid,
-            });
-            createSVG('text', {
-                x: this.options.index_xs[i] + this.options.index_widths[i] / 2,
-                y: this.options.header_height,
-                width: this.options.index_widths[i],
-                height: header_height,
-                innerHTML: key,
-                class: 'lower-text',
-                append_to: this.layers.date,
-            });
-        }
+
         createSVG('rect', {
             x: this.options.index_offset,
             y: 0,
@@ -499,6 +522,32 @@ export default class Gantt {
             class: 'grid-header',
             append_to: this.layers.grid,
         });
+
+        for (const [i, key] of this.get_info_cols().entries()) {
+            const classes = []
+            if (i == 0) classes.push('index')
+            createSVG('rect', {
+                x: this.options.index_xs[i],
+                y: 0,
+                'data-offset-x': this.options.index_xs[i],
+                width: this.options.index_widths[i],
+                height: header_height,
+                class: ['grid-header', ...classes].join(' '),
+                append_to: this.layers.index,
+            });
+
+            const text_x = this.options.index_xs[i] + 10//+ this.options.index_widths[i] / 2
+            createSVG('text', {
+                x: text_x,
+                y: this.options.header_height,
+                width: this.options.index_widths[i],
+                'data-offset-x': text_x,
+                height: header_height,
+                innerHTML: key,
+                class: ['lower-text', ...classes].join(' '),
+                append_to: this.layers.index,
+            });
+        }
     }
 
     make_grid_ticks() {
@@ -759,7 +808,7 @@ export default class Gantt {
     }
 
     set_scroll_position() {
-        const parent_element = this.$svg.parentElement;
+        const parent_element = this.layers.gantt.parentElement;
         if (!parent_element) return;
 
         const hours_before_first_task = date_utils.diff(
@@ -786,6 +835,7 @@ export default class Gantt {
                 this.hide_popup();
             }
         );
+
     }
 
     bind_bar_events() {

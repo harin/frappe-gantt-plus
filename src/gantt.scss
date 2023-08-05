@@ -10,22 +10,27 @@ $text-color: #333 !default;
 $blue: #a3a3ff !default;
 $handle-color: #ddd !default;
 
+.info-col {
+	fill: #ffffff;
+}
+
+.lower-text {
+	fill: $text-color;
+}
+
+.grid-header {
+	fill: #ffffff;
+	stroke: $border-color;
+	stroke-width: 1.4;
+}
+
 .gantt {
 	.grid-background {
 		fill: none;
 	}
 
-	.grid-header {
-		fill: #ffffff;
-		stroke: $border-color;
-		stroke-width: 1.4;
-	}
 
 	.grid-row {
-		fill: #ffffff;
-	}
-
-	.row-index {
 		fill: #ffffff;
 	}
 
@@ -74,7 +79,8 @@ $handle-color: #ddd !default;
 	}
 
 	.bar-progress {
-		fill: $blue;
+		fill: black;
+		opacity: 0.25;
 	}
 
 	.bar-invalid {

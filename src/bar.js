@@ -1,6 +1,7 @@
 import date_utils from './date_utils';
 import { $, createSVG, animateSVG } from './svg_utils';
 
+
 export default class Bar {
     constructor(gantt, task) {
         this.set_defaults(gantt, task);
@@ -83,6 +84,7 @@ export default class Bar {
             ry: this.corner_radius,
             class: 'bar',
             append_to: this.bar_group,
+            style: `fill: ${this.task._color}`
         });
 
         animateSVG(this.$bar, 'width', 0, this.width);
